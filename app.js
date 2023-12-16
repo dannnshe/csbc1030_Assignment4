@@ -1,37 +1,23 @@
 const express = require("express");
-const fs = require("fs");
+const userRoutes = require("./usersRoutes");
 const app = express();
 const port = 5001;
 
-// Function to read users from the JSON file
-function getUsers() {
-  try {
-    const data = fs.readFileSync("./users.json", "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-}
+app.use(express.json());
+app.use("/users", userRoutes);
 
-// Route to get all users
-app.get("/users", (req, res) => {
-  const users = getUsers();
-  res.json(users);
+app.use((req, res) => {
+  res.status(404).send({ message: "Route not found" });
 });
 
-// Route to get a user by id
-app.get("/users/:id", (req, res) => {
-  const users = getUsers();
-  const user = users.find((u) => u.id === parseInt(req.params.id));
-  if (user) {
-    res.json(user);
-  } else {
-    res.status(404).send({ message: "User not found" });
-  }
+// Central Error Handling Middleware
+app.use((error, req, res, next) => {
+  console.error("Central Error Handler:", error.message);
+  const status = error.status || 500;
+  const message = error.message || "Internal Server Error";
+  res.status(status).send({ error: message });
 });
 
-// Start the server
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
